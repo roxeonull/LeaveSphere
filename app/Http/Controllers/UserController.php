@@ -86,7 +86,7 @@ class UserController extends Controller
             'department_id' => 'nullable|exists:departments,id',
             'position' => 'nullable|string',
             'role' => ['required', Rule::in(['super_admin', 'manager', 'employee'])],
-            'leave_balance' => 'nullable|integer|min:0',
+            'leave_balance' => 'nullable|integer|min:0|max:25',
             'password' => 'required|string|min:8',
         ]);
 
@@ -119,7 +119,7 @@ class UserController extends Controller
             'position' => 'nullable|string',
             'role' => ['required', Rule::in(['super_admin', 'manager', 'employee'])],
             'status' => ['required', Rule::in(['active', 'inactive'])],
-            'leave_balance' => 'nullable|integer|min:0',
+            'leave_balance' => 'nullable|integer|min:0|max:25',
         ]);
 
         $user->update($validated);

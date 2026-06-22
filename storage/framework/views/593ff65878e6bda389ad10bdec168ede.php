@@ -128,7 +128,7 @@
                                 <div class="flex items-center gap-2">
                                     <template x-if="req.status === 'pending'">
                                         <div class="flex items-center gap-2">
-                                            <button @click="openApprove(req.id, req.name)"
+                                            <button @click="openApprove(req.id, req.name, req.leave_balance, req.total_days, req.type)"
                                                 class="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg font-medium transition-colors">
                                                 <i data-lucide="check" class="w-3 h-3"></i> Approve
                                             </button>
@@ -170,6 +170,17 @@
                     <h3 class="font-semibold text-gray-900 dark:text-white">Approve Leave Request</h3>
                     <p class="text-xs text-gray-400" x-text="'For: ' + selectedEmployee"></p>
                 </div>
+            </div>
+            <!-- Balance Info -->
+            <div class="mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/40 flex items-center gap-2">
+                <i data-lucide="info" class="w-4 h-4 text-blue-500 flex-shrink-0"></i>
+                <p class="text-xs text-blue-700 dark:text-blue-300">
+                    Sisa cuti karyawan:
+                    <span class="font-bold" x-text="selectedBalance + ' / 25 hari'"></span>
+                    <template x-if="selectedType === 'Annual Leave'">
+                        <span x-text="' · Akan berkurang ' + selectedDays + ' hari setelah approve'"></span>
+                    </template>
+                </p>
             </div>
             <div class="mb-4">
                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Notes (Optional)</label>
@@ -244,6 +255,9 @@ function approvalsPage() {
         showReject: false,
         selectedId: null,
         selectedEmployee: '',
+        selectedBalance: 0,
+        selectedDays: 0,
+        selectedType: '',
         approveNotes: '',
         rejectReason: '',
 
@@ -280,9 +294,12 @@ function approvalsPage() {
             }
         },
 
-        openApprove(id, name) {
+        openApprove(id, name, balance, days, type) {
             this.selectedId = id;
             this.selectedEmployee = name;
+            this.selectedBalance = balance;
+            this.selectedDays = days;
+            this.selectedType = type;
             this.approveNotes = '';
             this.showApprove = true;
         },

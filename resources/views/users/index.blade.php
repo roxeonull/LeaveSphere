@@ -131,6 +131,7 @@
                         <th class="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Department</th>
                         <th class="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Position</th>
                         <th class="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Role</th>
+                        <th class="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Leave Balance</th>
                         <th class="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
                         <th class="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
                     </tr>
@@ -158,6 +159,14 @@
                                 <span class="text-xs px-2 py-0.5 rounded-full"
                                     :class="user.role === 'super_admin' ? 'bg-red-100 text-red-700' : (user.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600')"
                                     x-text="user.role.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())"></span>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-sm font-semibold"
+                                        :class="user.leave_balance <= 5 ? 'text-red-600' : (user.leave_balance <= 10 ? 'text-amber-600' : 'text-green-600')"
+                                        x-text="user.leave_balance"></span>
+                                    <span class="text-xs text-gray-400">/ 25 hari</span>
+                                </div>
                             </td>
                             <td class="px-4 py-4">
                                 <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
@@ -261,8 +270,10 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Leave Balance (days)</label>
-                        <input type="number" x-model="form.leave_balance"
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            Leave Balance (hari) <span class="text-gray-400 font-normal">max. 25</span>
+                        </label>
+                        <input type="number" x-model="form.leave_balance" min="0" max="25"
                             class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400">
                     </div>
                 </div>

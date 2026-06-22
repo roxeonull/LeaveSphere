@@ -64,6 +64,7 @@ class ApprovalController extends Controller
                 'end' => $req->end_date->format('Y-m-d'),
                 'days' => $req->total_days,
                 'status' => $req->status,
+                'leave_balance' => $req->user->leave_balance ?? 0,
                 'reason' => $req->status === 'rejected' ? ($latestApproval->notes ?? '') : '',
             ];
         });
@@ -80,18 +81,60 @@ class ApprovalController extends Controller
 
     public function approve(Request $request, $id)
     {
-        $leave = LeaveRequest::findOrFail($id);
-        $leave->update(['status' => 'approved']);
+        $leave = LeaveRequest::with('user')->findOrFail($id);
 
-        Approval::create([
-            'leave_request_id' => $leave->id,
-            'approver_id' => Auth::id(),
-            'status' => 'approved',
-            'notes' => $request->input('notes'),
-        ]);
+        // Prevent double approval
+        if ($leave->status === 'approved') {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Request already approved.'], 422);
+            }
+            return back()->with('error', 'Request already approved.');
+        }
+
+        $user = $leave->user;
+
+        // Check leave balance for Annual Leave (max 25 days total, must have enough left)
+        if ($leave->leave_type === 'Annual Leave') {
+            if ($user->leave_balance < $leave->total_days) {
+                $msg = "Insufficient leave balance. {$user->name} only has {$user->leave_balance} day(s) remaining.";
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->with('error', $msg);
+            }
+        }
+
+        // Approve and deduct balance
+        \Illuminate\Support\Facades\DB::transaction(function () use ($leave, $user, $request) {
+            $leave->update(['status' => 'approved']);
+
+            // Deduct leave_balance for Annual Leave only
+            if ($leave->leave_type === 'Annual Leave') {
+                $user->decrement('leave_balance', $leave->total_days);
+            }
+
+            Approval::create([
+                'leave_request_id' => $leave->id,
+                'approver_id' => Auth::id(),
+                'status' => 'approved',
+                'notes' => $request->input('notes'),
+            ]);
+
+            // Create notification for the employee
+            \App\Models\NotificationItem::create([
+                'user_id' => $user->id,
+                'title' => 'Cuti Disetujui',
+                'message' => "Pengajuan {$leave->leave_type} Anda ({$leave->total_days} hari) telah disetujui.",
+                'is_read' => false,
+            ]);
+        });
 
         if ($request->wantsJson() || $request->ajax()) {
-            return response()->json(['success' => true, 'message' => 'Leave request approved successfully.']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Leave request approved. Balance updated.',
+                'new_balance' => $user->fresh()->leave_balance,
+            ]);
         }
 
         return back()->with('success', 'Leave request approved successfully.');
@@ -101,15 +144,33 @@ class ApprovalController extends Controller
     {
         $request->validate(['reason' => 'required|string']);
 
-        $leave = LeaveRequest::findOrFail($id);
-        $leave->update(['status' => 'rejected']);
+        $leave = LeaveRequest::with('user')->findOrFail($id);
 
-        Approval::create([
-            'leave_request_id' => $leave->id,
-            'approver_id' => Auth::id(),
-            'status' => 'rejected',
-            'notes' => $request->reason,
-        ]);
+        if ($leave->status !== 'pending') {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Only pending requests can be rejected.'], 422);
+            }
+            return back()->with('error', 'Only pending requests can be rejected.');
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($leave, $request) {
+            $leave->update(['status' => 'rejected']);
+
+            Approval::create([
+                'leave_request_id' => $leave->id,
+                'approver_id' => Auth::id(),
+                'status' => 'rejected',
+                'notes' => $request->reason,
+            ]);
+
+            // Notify employee
+            \App\Models\NotificationItem::create([
+                'user_id' => $leave->user->id,
+                'title' => 'Cuti Ditolak',
+                'message' => "Pengajuan {$leave->leave_type} Anda ditolak. Alasan: {$request->reason}",
+                'is_read' => false,
+            ]);
+        });
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json(['success' => true, 'message' => 'Leave request rejected.']);

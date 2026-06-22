@@ -37,7 +37,7 @@ class DatabaseSeeder extends Seeder
             'department_id' => $departments['Engineering']->id,
             'role' => 'super_admin',
             'position' => 'Project Manager / Super Admin',
-            'leave_balance' => 12,
+            'leave_balance' => 25,
             'status' => 'active',
         ]);
 
@@ -49,7 +49,7 @@ class DatabaseSeeder extends Seeder
             'department_id' => $departments['HR']->id,
             'role' => 'manager',
             'position' => 'HR Manager / System Analyst',
-            'leave_balance' => 12,
+            'leave_balance' => 25,
             'status' => 'active',
         ]);
 
@@ -98,7 +98,7 @@ class DatabaseSeeder extends Seeder
                 'department_id' => $departments[$deptName]->id,
                 'role' => 'employee',
                 'position' => $position,
-                'leave_balance' => rand(5, 12),
+                'leave_balance' => 25,
                 'status' => 'active',
             ]);
         }
@@ -130,7 +130,7 @@ class DatabaseSeeder extends Seeder
                 'department_id' => $departments[$dept]->id,
                 'role' => 'employee',
                 'position' => 'Staff',
-                'leave_balance' => rand(5, 12),
+                'leave_balance' => 25,
                 'status' => $i % 25 === 0 ? 'inactive' : 'active',
             ]);
         }
