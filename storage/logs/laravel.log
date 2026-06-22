@@ -292,3 +292,11 @@
 #52 C:/laragon/www/leavesphere/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('C://laragon//www//...')
 #53 {main}
 "} 
+[2026-06-20 22:26:55] local.ERROR: Trait "Laravel\Sanctum\HasApiTokens" not found {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Trait \"Laravel\\Sanctum\\HasApiTokens\" not found at C:/laragon/www/leavesphere/app/Models/User.php:11)
+[stacktrace]
+#0 {main}
+"} 
+[2026-06-20 22:29:48] local.ERROR: Trait "Laravel\Sanctum\HasApiTokens" not found {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Trait \"Laravel\\Sanctum\\HasApiTokens\" not found at C:/laragon/www/leavesphere/app/Models/User.php:11)
+[stacktrace]
+#0 {main}
+"} 
