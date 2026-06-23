@@ -150,21 +150,34 @@ class DatabaseSeeder extends Seeder
         $statuses = ['pending', 'approved', 'rejected'];
 
         foreach ($employees as $emp) {
+            $usedDays = 0; // track how many days used so balance stays realistic
             $numRequests = rand(2, 5);
+
             for ($j = 0; $j < $numRequests; $j++) {
-                $start = Carbon::now()->addDays(rand(-30, 30));
+                $start = Carbon::now()->addDays(rand(-60, 30));
                 $days = rand(1, 5);
-                $status = $statuses[array_rand($statuses)];
+                $type = $leaveTypes[array_rand($leaveTypes)];
+
+                // Don't approve if it would drain balance too much
+                $remainingBalance = 25 - $usedDays;
+                if ($remainingBalance <= 0) {
+                    $status = 'pending'; // can't approve if no balance
+                } else {
+                    $status = $statuses[array_rand($statuses)];
+                    if ($status === 'approved' && $days > $remainingBalance) {
+                        $days = $remainingBalance; // cap at remaining balance
+                    }
+                }
 
                 $createdAt = Carbon::now()->subMonths(rand(0, 5))->subDays(rand(0, 28));
 
                 $leave = LeaveRequest::create([
                     'user_id' => $emp->id,
-                    'leave_type' => $leaveTypes[array_rand($leaveTypes)],
+                    'leave_type' => $type,
                     'start_date' => $start,
-                    'end_date' => $start->copy()->addDays($days),
+                    'end_date' => $start->copy()->addDays($days - 1),
                     'total_days' => $days,
-                    'reason' => 'Personal reasons',
+                    'reason' => 'Keperluan pribadi',
                     'status' => $status,
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt,
@@ -176,7 +189,7 @@ class DatabaseSeeder extends Seeder
                     'leave_request_id' => $leave->id,
                     'approver_id' => $admin->id,
                     'status' => $status,
-                    'notes' => $status === 'rejected' ? 'Department understaffed during this period' : null,
+                    'notes' => $status === 'rejected' ? 'Departemen kekurangan staf pada periode ini' : null,
                     'created_at' => $approvedAt,
                     'updated_at' => $approvedAt,
                 ]);
@@ -188,7 +201,15 @@ class DatabaseSeeder extends Seeder
                         'breached' => rand(0, 1) === 1,
                     ]);
                 }
+
+                // Track used days for approved leaves
+                if ($status === 'approved') {
+                    $usedDays += $days;
+                }
             }
+
+            // Update employee's leave_balance to reflect actual usage
+            $emp->update(['leave_balance' => max(0, 25 - $usedDays)]);
         }
 
         // ===== Delegations =====

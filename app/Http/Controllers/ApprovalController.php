@@ -93,24 +93,25 @@ class ApprovalController extends Controller
 
         $user = $leave->user;
 
-        // Check leave balance for Annual Leave (max 25 days total, must have enough left)
-        if ($leave->leave_type === 'Annual Leave') {
-            if ($user->leave_balance < $leave->total_days) {
-                $msg = "Insufficient leave balance. {$user->name} only has {$user->leave_balance} day(s) remaining.";
-                if ($request->wantsJson() || $request->ajax()) {
-                    return response()->json(['success' => false, 'message' => $msg], 422);
-                }
-                return back()->with('error', $msg);
+        // Check leave balance (applies to ALL leave types)
+        if ($user->leave_balance < $leave->total_days) {
+            $msg = "Saldo cuti tidak cukup. {$user->name} hanya memiliki {$user->leave_balance} hari sisa cuti.";
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
             }
+            return back()->with('error', $msg);
         }
 
         // Approve and deduct balance
         \Illuminate\Support\Facades\DB::transaction(function () use ($leave, $user, $request) {
             $leave->update(['status' => 'approved']);
 
-            // Deduct leave_balance for Annual Leave only
-            if ($leave->leave_type === 'Annual Leave') {
+            // Deduct leave_balance for ALL leave types
+            if ($user->leave_balance >= $leave->total_days) {
                 $user->decrement('leave_balance', $leave->total_days);
+            } else {
+                // If balance is less, set to 0 (don't go negative)
+                $user->update(['leave_balance' => 0]);
             }
 
             Approval::create([

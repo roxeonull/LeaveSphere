@@ -72,13 +72,12 @@ class LeaveRequestController extends Controller
             ], 422);
         }
 
-        if ($validated['leave_type'] === 'Annual Leave') {
-            if ($totalDays > $user->leave_balance) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Sisa cuti tidak cukup. Sisa cuti Anda: {$user->leave_balance} hari.",
-                ], 422);
-            }
+        // Check balance for ALL leave types
+        if ($totalDays > $user->leave_balance) {
+            return response()->json([
+                'success' => false,
+                'message' => "Sisa cuti tidak cukup. Sisa cuti Anda: {$user->leave_balance} hari.",
+            ], 422);
         }
 
         $leave = LeaveRequest::create([
